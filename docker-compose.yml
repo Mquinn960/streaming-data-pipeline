@@ -1,0 +1,45 @@
+version: '3'
+services:
+  zookeeper:
+    build: ./build/zookeeper/
+    hostname: zookeeper
+    ports:
+      - "${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: ${ZOOKEEPER_PORT}
+      ZOO_SERVERS: server.1=zookeeper:2888:3888
+
+  kafka:
+    build: ./build/kafka/
+    hostname: kafka
+    ports:
+      - "${KAFKA_PORT}:${KAFKA_PORT}"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:1${KAFKA_PORT},LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-kafka}:${KAFKA_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:${ZOOKEEPER_PORT}"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "${BASE_TOPIC}:1:1"
+    depends_on:
+      - zookeeper
+
+  kafdrop:
+    build: ./build/kafdrop/
+    restart: "no"
+    ports:
+      - "${KAFDROP_PORT}:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:1${KAFKA_PORT}"
+    depends_on:
+      - kafka
+
+  flask:
+    build: ./build/flask/
+    ports: 
+      - ${FLASK_PORT}:${FLASK_PORT}
+    environment: 
+        FLASK_APP: /var/api/server.py
+        PORT: ${FLASK_PORT}

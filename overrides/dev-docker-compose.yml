@@ -1,0 +1,12 @@
+version: '2'
+services:
+  zookeeper:
+    volumes:
+      - /mnt/zookeeper/data:/data
+      - /mnt/zookeeper/datalog:/datalog
+  kafka:
+    volumes:
+      - /mnt/kafka:/var/lib/kafka/data
+  flask:
+    volumes: 
+      - ./api:/var/api
