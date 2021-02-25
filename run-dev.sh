@@ -1,0 +1,1 @@
+sudo docker-compose -f docker-compose.yml -f overrides/dev-docker-compose.yml up -d
