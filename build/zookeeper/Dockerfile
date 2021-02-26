@@ -1,0 +1,1 @@
+FROM zookeeper:3.4.9 as mq-zookeeper
