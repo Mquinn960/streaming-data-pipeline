@@ -1,5 +1,6 @@
 # Custom
 test_data/*
+worker/test_data/*
 
 # Created by https://www.toptal.com/developers/gitignore/api/venv
 # Edit at https://www.toptal.com/developers/gitignore?templates=venv
