@@ -10,6 +10,23 @@
             "request": "launch",
             "program": "${workspaceFolder}/api/server.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Faust Worker",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/worker/faust_worker.py",
+            "args": [
+                "--datadir=/tmp/faust_work",
+                "-A",
+                "faust_worker",
+                "worker",
+                "-l",
+                "info",
+                "--web-port",
+                "6067"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }
