@@ -10,3 +10,11 @@ services:
   flask:
     volumes: 
       - ./api:/var/api
+  postgres:
+    volumes:
+      - ./build/postgres/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+  # faust:
+  #   volumes:
+  #     - ./faust:/var/faust_app/
+  #     - ./test_data/:/faust_app/test_data
+  #     - /mnt/faust_data:/data/

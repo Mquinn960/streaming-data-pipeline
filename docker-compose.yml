@@ -16,7 +16,7 @@ services:
     ports:
       - "${KAFKA_PORT}:${KAFKA_PORT}"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:1${KAFKA_PORT},LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-kafka}:${KAFKA_PORT}
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:1${KAFKA_PORT},LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:${KAFKA_PORT}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:${ZOOKEEPER_PORT}"
@@ -43,3 +43,27 @@ services:
     environment: 
         FLASK_APP: /var/api/server.py
         PORT: ${FLASK_PORT}
+
+  postgres:
+    build: ./build/postgres/
+    restart: always
+    environment:
+      POSTGRES_USER: menustatsuser
+      POSTGRES_PASSWORD: examplepw
+      POSTGRES_DB: menustats
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on: 
+      - postgres
+
+  # faust:
+  #   build: ./build/faust/
+  #   ports:
+  #     - "7000:7000"
+  #   command: "faust --datadir=/data/work_6067 -A faust_worker worker -l info --web-port 6067"
+  #   depends_on:
+  #     - kafka
