@@ -30,9 +30,9 @@ async def read_topic(streams):
     async for payload in streams:
         match_records = matcher.match(payload, full_search=False)
         print("Message Received:", payload)
-        if match_records:
+        if match_records['term_matches']:
             print("Matched Record:", match_records)
-            writer.write(match_records)
+            writer.write_record(match_records)
         else:
             print("No Match Found.")
         print("Message Processed.")

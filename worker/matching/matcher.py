@@ -32,7 +32,7 @@ class Matcher():
 
     def _process_match(self, input_string, menu_item):
 
-        term_matches = {}
+        term_matches = []
 
         point_match = lambda a, b : a.lower() in b.lower()
 
@@ -44,7 +44,7 @@ class Matcher():
             if point_match(term, input_string):
                 match_found = True
             # Before performing heavy NLP operations
-            # Check Jaccard shingle distance of the compared terms
+            # Check Jaccard distance of the compared terms
             elif distance.jaccard(term, input_string) > self.jacc_threshold:
                 # Now we can perform a distance search on individual linguistic tokens
                 tokens = self.tokeniser.tokenize(input_string)
@@ -63,11 +63,11 @@ class Matcher():
                             match_found = True
 
             if match_found:
-                match_record = {}
-                match_record[term] = menu_item
-                term_matches[term_id] = match_record
+                term_matches.append((term_id, term))
 
-        return term_matches
+        menu_item['term_matches'] = term_matches
+
+        return menu_item
 
     def _terms_share_common_letters(self, term1, term2):
 

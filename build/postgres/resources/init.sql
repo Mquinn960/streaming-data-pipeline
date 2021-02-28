@@ -1,3 +1,0 @@
--- CREATE USER menustatsuser;
--- CREATE DATABASE menustats;
--- GRANT ALL PRIVILEGES ON DATABASE menustats TO menustatsuser;

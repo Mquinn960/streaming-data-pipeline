@@ -5,3 +5,4 @@ wheel
 spacy
 Distance
 python-Levenshtein-0.12.2
+psycopg2
