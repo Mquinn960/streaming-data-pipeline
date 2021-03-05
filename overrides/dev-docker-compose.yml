@@ -17,11 +17,11 @@ services:
       - ./build/postgres/resources/user.sql:/docker-entrypoint-initdb.d/3-user.sql
       - postgres_data:/var/lib/postgresql/data/
 
-  # faust:
-  #   volumes:
-  #     - ./faust:/var/faust_app/
-  #     - ./test_data/:/faust_app/test_data
-  #     - /mnt/faust_data:/data/
+  faust:
+    volumes:
+      - ./faust:/var/faust_app/
+      - ./test_data/:/faust_app/test_data
+      - /mnt/faust_data:/data/
 
 volumes:
   postgres_data:

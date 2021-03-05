@@ -64,10 +64,10 @@ services:
       - "${PGADMIN_PORT:-5050}:80"
     restart: unless-stopped
 
-  # faust:
-  #   build: ./build/faust/
-  #   ports:
-  #     - "7000:7000"
-  #   command: "faust --datadir=/data/work_6067 -A faust_worker worker -l info --web-port 6067"
-  #   depends_on:
-  #     - kafka
+  faust:
+    build: ./build/faust/
+    ports:
+      - "7000:7000"
+    command: "faust --datadir=/data/work_6067 -A faust_worker worker -l info --web-port 6067"
+    depends_on:
+      - kafka
