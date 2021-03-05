@@ -15,8 +15,7 @@ writer = None
 
 app = App(
     'app_main',
-    broker='kafka://localhost:9091'
-    # broker='kafka://kafka:9091'
+    broker='kafka://kafka:9091'
 )
 
 topic = app.topic(

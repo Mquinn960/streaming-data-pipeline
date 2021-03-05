@@ -21,7 +21,7 @@ Infrastructure
 - A Kafdrop instance to monitor Kafka topics via a web-app
 - A PgAdmin instance to view and monitor the endpoint database
 
-![Alt text](/doc/images/Planning.png?raw=true "Whiteboard showing the initial system architecture plan")
+![Alt text](/doc/images/Planning.jpg?raw=true "Whiteboard showing the initial system architecture plan")
 Whiteboard showing the initial system architecture plan
 
 ![Alt text](/doc/images/Kafdrop.png?raw=true "Kafdrop showing the eventual ingestion topic")
@@ -72,7 +72,7 @@ In this section, I self-evaluate the work undertaken with reference to the brief
 
 I took an hour to plan the solution initially. The brief calls for some fairly specific constraints, and this informed the architecture I proposed.
 
-![Alt text](/doc/images/Planning.png?raw=true "Planning")
+![Alt text](/doc/images/Planning.jpg?raw=true "Planning")
 
 The planning was mostly done away from the computer, referring to the brief and whiteboarding the stages data would need to go through in order to be ingested, cleaned, enriched and persisted.
 
@@ -88,25 +88,75 @@ I gave myself about 2 working days to complete this task, and eventually clocked
 
 The tasks below are aggregated and only give a rough idea of the sequence of events in descending order.
 
-Task	                                Duration
-
-Database layer - Matcher data egress	02:23:56
-Database layer - Psql bootstrapping	    01:47:12
-Database layer - Psql infra		        00:44:14
-Docker Infra				            03:12:41
-Faust consumer				            02:22:33
-Flask Kafka producer			        01:54:34
-Git shuffling				            00:14:01
-Matching engine				            02:32:10
-Planning				                01:02:26
-
-Total                                   16:13:47
+| Task      | Duration |
+| ----------- | ----------- |
+| Database layer - Matcher data egress      | 02:23:56       |
+| Database layer - Psql bootstrapping   | 01:47:12        |
+| Database layer - Psql infra   | 00:44:14        |
+| Docker Infra   | 03:12:41        |
+| Faust consumer   | 02:22:33        |
+| Flask Kafka producer   | 01:54:34        |
+| Git shuffling   | 00:14:01        |
+| Matching engine   | 02:32:10        |
+| Planning   | 01:02:26        |
+| **Total**   | **16:13:47**        |
 
 ### Domain Logic
 
 Although this system has many threads and vertices pulling together, the main domain-job here is to take a menu item's human-readable, unstructured description and tie this to a product inventory.
 
-To do this 
+To do this, within the Faust worker, there is an NLP layer to break down the unstructured text into discrete tokens, before matching these against the list of inventory terms.
+
+In the matching logic, several steps of note are taken in order to preserve performance. The emphasis is on exiting early if we get an early hit on our term. When we have to do heavy-lifting analysis, it's as a last resort, and should happen in the C layer. The terms themselves are cached once to prevent multiple calls to the same file.
+
+- A partial or full search is available in order to search against just the product name, or the name and the description
+- Jaccard distance is used to approximate whether the terms have enough overlap to warrant further matching logic
+  - As in, don't go calculating Levenshtein distance when the terms don't even share more than a percentage of the same letters
+- Multi-word tokens (parts of a Proper Noun for example) are joined before matching as sets of these may represent different products 
+- Don't bother with distance searching if we don't have any set-intersection in the letters of our terms
+- Eventually perform Levenshtein distance-matching on the terms with a set threshold
+- Extract term-product pairs into term matches which are then fed to the database as successful matches
+
+```python
+def _process_match(self, input_string, menu_item):
+
+        term_matches = []
+
+        point_match = lambda a, b : a.lower() in b.lower()
+
+        for term_id, term in self.term_cache.items():
+
+            match_found = False
+
+            # If we have a direct match, don't do anything fancy
+            if point_match(term, input_string):
+                match_found = True
+            # Before performing heavy NLP operations
+            # Check Jaccard distance of the compared terms
+            elif distance.jaccard(term, input_string) > self.jacc_threshold:
+                # Now we can perform a distance search on individual linguistic tokens
+                tokens = self.tokeniser.tokenize(input_string)
+                for token in tokens:
+                    token_text = ''
+                    # If our tokeniser model returns multi-part tokens, create a string
+                    if type(token) is list:
+                        token_text = ' '.join([single_token.text for single_token in token])
+                    else:
+                        token_text = token.text
+                    # Don't bother distance searching if the terms don't share any common letters
+                    # This uses set intersection for performance
+                    if self._terms_share_common_letters(token_text, term):
+                        # Perform Levenshtein distancing search on a prefined proximity threshold
+                        if self._distance_match(token_text, term):
+                            match_found = True
+
+            if match_found:
+                term_matches.append((term_id, term))
+
+        menu_item['term_matches'] = term_matches
+
+        return menu_item
+```
 
 ### Overall Fitness to the Brief
 
@@ -167,3 +217,4 @@ On this note, there are *a lot* of things I'd like to expand upon and remediate 
 - Consider moving to K8s for production-grade scaling
   - Consider building distroless containers
   - Consider using Terraform to run up the stack so this can be moved to the cloud easily
+- Consider caching product-inventory "term" lists in ElasticSearch or similar to smooth the querying of these
